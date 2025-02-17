@@ -1,0 +1,61 @@
+version: '3.9' 
+ 
+services: 
+
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - "./nginx.conf:/etc/nginx/nginx.conf"
+    depends_on:
+      - user-service
+    networks:
+      - dev
+
+  backend:
+    build:
+      context: ./
+    networks:
+      - dev
+    hostname: user-service
+    envirioment:
+      PG_USERNAME: postgres
+      PG_PASSWORD: python$_venv
+      PG_HOST: 192.168.100.80
+      PG_PORT: 5432
+
+
+ 
+  pg: 
+    image: postgres:16.4 
+    environment: 
+      POSTGRES_DB: UserYDB 
+      POSTGRES_USER: postgres 
+      POSTGRES_PASSWORD: python$_venv 
+      PGDATA: /var/lib/postgresql/data 
+    ports: 
+      - "5432:5432" 
+    volumes: 
+      - pgdata:/var/lib/postgresql/data 
+    healthcheck: 
+      test: ["CMD-SHELL", "pg_isready -U postgres"] 
+      interval: 5s 
+      timeout: 3s 
+      retries: 5 
+ 
+  pgadmin: 
+    image: dpage/pgadmin4 
+    environment: 
+      PGADMIN_DEFAULT_EMAIL: admin@admin.org 
+      PGADMIN_DEFAULT_PASSWORD: admin 
+      PGADMIN_CONFIG_SERVER_MODE: 'False' 
+    ports: 
+      - "5050:80" 
+    depends_on: 
+      pg: 
+        condition: service_healthy 
+ 
+volumes: 
+  pgdata:
+
